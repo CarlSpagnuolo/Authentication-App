@@ -4,6 +4,8 @@ import { getProfile } from "../services/authService";
 import CyberBackground from "../components/CyberBackground";
 import AudioToggle from "../components/AudioToggle";
 import { useTranslation } from "react-i18next";
+import DashboardHeader from "../components/Dashboard/DashboardHeader";
+import DashboardContent from "../components/Dashboard/DashboardContent";
 
 type User = {
   id: number;
@@ -15,17 +17,11 @@ function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [welcomeMessage, setWelcomeMessage] = useState("");
   const { t } = useTranslation();
 
   useEffect(() => {
     async function loadProfile() {
       const token = localStorage.getItem("token");
-      const message = localStorage.getItem("welcomeMessage");
-      if (message) {
-        setWelcomeMessage(message);
-        localStorage.removeItem("welcomeMessage");
-      }
 
       if (!token) {
         navigate("/login");
@@ -46,14 +42,6 @@ function Home() {
 
     loadProfile();
   }, [navigate]);
-
-  function HandleGoHome() {
-    navigate("/landing", {
-      state: {
-        startBoot: false,
-      },
-    });
-  }
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -99,69 +87,10 @@ function Home() {
         >
           <AudioToggle />
           {user && (
-            <h1
-              className="
-                text-3xl
-                font-bold
-                mb-6
-                bg-linear-to-r
-                from-cyan-400
-                to-purple-500
-                bg-clip-text
-                text-transparent
-              "
-            >
-              {welcomeMessage ||
-                t("home.welcomeBack", {
-                  username: user.username,
-                })}
-            </h1>
+            <DashboardHeader username={user.username} onLogout={handleLogout} />
           )}
-
-          <p className="text-cyan-600 mb-2">
-            <strong>{t("home.username")}:</strong> {user?.username}
-          </p>
-
-          <p className="text-cyan-600 mb-6">
-            <strong>{t("home.email")}:</strong> {user?.email}
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={HandleGoHome}
-              className=" px-6
-                  py-3
-                  rounded-lg
-                  bg-cyan-500/10
-                  border
-                  border-cyan-400/40
-                  text-cyan-300
-                  hover:bg-cyan-400/20
-                  transition
-                  duration-300
-                  cursor cursor-pointer
-                "
-            >
-              {t("home.buttonHome")}
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-6
-                  py-3
-                  rounded-lg
-                  bg-purple-500/10
-                  border
-                  border-purple-400/40
-                  text-purple-300
-                  hover:bg-purple-400/20
-                  transition
-                  duration-300
-                  cursor cursor-pointer
-                "
-            >
-              {t("home.logout")}
-            </button>
-          </div>
         </div>
+        <DashboardContent username={user?.username ?? ""} />
       </div>
     </CyberBackground>
   );
