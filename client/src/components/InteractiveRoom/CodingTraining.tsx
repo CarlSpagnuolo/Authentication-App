@@ -187,7 +187,7 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
               Great job!
             </h2>
 
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-gray-200">
               You've completed this challenge and unlocked the next one.
             </p>
 
@@ -258,7 +258,7 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
 
           <h2 className="mt-4 text-2xl font-semibold text-white">Not quite!</h2>
 
-          <p className="mt-2 text-sm text-gray-400">
+          <p className="mt-2 text-sm text-gray-200">
             Your solution doesn't pass all the tests. Keep practicing and try
             again.
           </p>
@@ -355,11 +355,11 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
           className="
             absolute
             right-6
-            top-11.5
-            text-xs
-            text-gray-400
+            top-9
+            text-[12.5px]
+            text-cyan-500
             transition-colors
-            hover:text-cyan-200
+            hover:text-cyan-300
             cursor-pointer
           "
         >
@@ -369,23 +369,27 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
         <div className="w-full max-w-3xl">
           {/* Challenge header */}
           <div className="mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-10">
+              <span className="text-sm text-gray-100">
+                Challenge {challengeNumber}
+              </span>
+
+              <span className="text-xs text-gray-300">•</span>
+
               <span
                 className={`text-xs font-semibold uppercase tracking-wider ${theme.text}`}
               >
                 {level}
               </span>
-
-              <span className="text-xs text-gray-600">•</span>
-
-              <span className="text-xs text-gray-500">
-                Challenge {challengeNumber}
-              </span>
             </div>
 
-            <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
+            <h2 className="mt-2 text-center text-2xl font-semibold text-white">
+              {title}
+            </h2>
 
-            <p className="mt-2 text-sm text-gray-400">{description}</p>
+            <p className="mt-2 text-sm text-center text-gray-400">
+              {description}
+            </p>
           </div>
 
           {/* Task */}
@@ -398,9 +402,9 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
               p-5
             "
           >
-            <p className="text-sm font-medium text-gray-200">Task</p>
+            {/* <p className="text-sm font-medium text-gray-200">Task</p> */}
 
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">{task}</p>
+            <p className="mt-2 text-sm leading-relaxed text-gray-200">{task}</p>
 
             <div
               className={`
@@ -412,7 +416,7 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
                 p-3
                 font-mono
                 text-xs
-                text-gray-300
+                text-gray-400
               `}
             >
               {example}
@@ -421,7 +425,7 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
 
           {/* Code */}
           <div className="mt-5">
-            <p className="mb-2 text-xs font-medium text-gray-400">
+            <p className="mb-2 text-center text-sm font-medium text-gray-200">
               Your solution
             </p>
 
@@ -514,13 +518,13 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
       >
         {/* Header */}
         {selectedChallenge === null && (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center mt-1 justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-cyan-200">
+              <h2 className="text-lg font-semibold text-cyan-300">
                 Coding Training
               </h2>
 
-              <p className="text-xs text-gray-500">
+              <p className="text-[12.5px] mt-0.5 text-gray-300">
                 Complete the challenges in order
               </p>
             </div>

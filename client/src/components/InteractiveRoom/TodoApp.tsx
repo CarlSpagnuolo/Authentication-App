@@ -99,7 +99,7 @@ function TodoApp({ onClose }: TodoAppProps) {
         justify-center
         bg-[#050816]/45
         backdrop-blur-sm
-      "
+        "
     >
       <div
         className="
@@ -114,7 +114,7 @@ function TodoApp({ onClose }: TodoAppProps) {
           p-6
           text-white
           shadow-[0_0_50px_rgba(34,211,238,0.12)]
-        "
+          "
       >
         <button
           type="button"
@@ -123,7 +123,7 @@ function TodoApp({ onClose }: TodoAppProps) {
           className="
             absolute
             right-4
-            top-4
+            top-6.5
             flex
             h-8
             w-8
@@ -147,18 +147,18 @@ function TodoApp({ onClose }: TodoAppProps) {
           ✕
         </button>
         {/* Header */}
-        <div className="mb-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400/70">
+        <div className="mb-5 space-y-10">
+          <p className="text-xs uppercase tracking-[0.2em] mt-2 text-cyan-400/70">
             Workspace
           </p>
 
-          <h2 className="mt-1 text-xl font-semibold text-cyan-200">
+          <h2 className="mt-2 text-xl text-center font-semibold text-cyan-300">
             📝 To-Do List
           </h2>
         </div>
 
         {/* Add task */}
-        <div className="mb-5 flex gap-2">
+        <div className="mb-5 mt-10 flex gap-2">
           <input
             type="text"
             value={newTodo}
@@ -348,7 +348,7 @@ function TodoApp({ onClose }: TodoAppProps) {
         </div>
 
         {/* Footer */}
-        <div className="mt-5 text-xs text-gray-500">
+        <div className="mt-5 text-xs text-gray-300/90">
           {completedTodos} of {todos.length} tasks completed
         </div>
       </div>
