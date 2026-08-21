@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 
 type CodingTrainingProps = {
   onClose: () => void;
@@ -117,15 +117,29 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
   const [selectedChallenge, setSelectedChallenge] = useState<number | null>(
     null,
   );
+  const [visibleChallenge, setVisibleChallenge] = useState(1);
+  const [leavingChallenge, setLeavingChallenge] = useState<number | null>(null);
 
+  const [animationDirection, setAnimationDirection] = useState<
+    "next" | "previous"
+  >("next");
+
+  const [isCarouselAnimating, setIsCarouselAnimating] = useState(false);
+  const [carouselPhase, setCarouselPhase] = useState<
+    "idle" | "prepare" | "animate"
+  >("idle");
   const [challenge1Completed, setChallenge1Completed] = useState(false);
-
   const [challenge2Completed, setChallenge2Completed] = useState(false);
-
   const [code, setCode] = useState("");
-
   const [challengeStatus, setChallengeStatus] =
     useState<ChallengeStatus>("idle");
+
+  const [cardTilt, setCardTilt] = useState({
+    rotateX: 0,
+    rotateY: 0,
+  });
+  const [isCardHovered, setIsCardHovered] = useState(false);
+  const [isCardPressed, setIsCardPressed] = useState(false);
 
   const handleRunChallenge = () => {
     if (code.trim() === "") {
@@ -176,6 +190,152 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
     setChallengeStatus("idle");
   };
 
+  const moveToChallenge = (
+    nextChallenge: number,
+    direction: "next" | "previous",
+  ) => {
+    if (isCarouselAnimating || nextChallenge === visibleChallenge) return;
+
+    resetCardTilt();
+
+    setIsCarouselAnimating(true);
+    setLeavingChallenge(visibleChallenge);
+    setVisibleChallenge(nextChallenge);
+    setAnimationDirection(direction);
+    setCarouselPhase("prepare");
+
+    window.requestAnimationFrame(() => {
+      setCarouselPhase("animate");
+    });
+
+    window.setTimeout(() => {
+      setLeavingChallenge(null);
+      setCarouselPhase("idle");
+      setIsCarouselAnimating(false);
+    }, 300);
+  };
+
+  const showPreviousChallenge = () => {
+    if (visibleChallenge === 1) return;
+
+    moveToChallenge(visibleChallenge - 1, "previous");
+  };
+
+  const showNextChallenge = () => {
+    if (visibleChallenge === 3) return;
+
+    moveToChallenge(visibleChallenge + 1, "next");
+  };
+
+  const handleCardMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+    const card = event.currentTarget.getBoundingClientRect();
+
+    const pointerX = (event.clientX - card.left) / card.width - 0.5;
+    const pointerY = (event.clientY - card.top) / card.height - 0.5;
+
+    setCardTilt({
+      rotateX: pointerY * 10,
+      rotateY: pointerX * -10,
+    });
+  };
+
+  const resetCardTilt = () => {
+    setCardTilt({
+      rotateX: 0,
+      rotateY: 0,
+    });
+
+    setIsCardHovered(false);
+    setIsCardPressed(false);
+  };
+
+  const challenges = [
+    {
+      id: 1,
+      level: "Beginner",
+      title: "Find the Maximum",
+      description: "Find the largest number inside an array.",
+      colorClass: "text-green-400",
+      cardClass: "border-green-400/20 bg-green-400/5",
+      unlocked: true,
+    },
+    {
+      id: 2,
+      level: "Intermediate",
+      title: "Filter and Sort",
+      description: "Filter and sort values from an array.",
+      colorClass: "text-yellow-400",
+      cardClass: "border-yellow-400/20 bg-yellow-400/5",
+      unlocked: challenge1Completed,
+    },
+    {
+      id: 3,
+      level: "Hard",
+      title: "Find the Top Values",
+      description: "Combine filtering, sorting and selection.",
+      colorClass: "text-red-400",
+      cardClass: "border-red-400/20 bg-red-400/5",
+      unlocked: challenge2Completed,
+    },
+  ];
+
+  const currentChallenge = challenges[visibleChallenge - 1]!;
+  const leavingChallengeData =
+    leavingChallenge === null ? null : challenges[leavingChallenge - 1]!;
+
+  const renderChallengeCardContent = (
+    challenge: (typeof challenges)[number],
+  ) => (
+    <>
+      <div className="mb-5 flex items-center justify-between">
+        <span
+          className={`text-xs font-semibold uppercase tracking-wider ${challenge.colorClass}`}
+        >
+          {challenge.level}
+        </span>
+
+        <span className="text-lg">{challenge.unlocked ? "🔓" : "🔒"}</span>
+      </div>
+
+      <h3 className="text-lg font-semibold text-white">{challenge.title}</h3>
+
+      <p className="mt-2 text-sm leading-relaxed text-gray-400">
+        {challenge.description}
+      </p>
+
+      <span
+        className={`
+        absolute
+        left-1/2
+        top-[60%]
+        -translate-x-1/2
+        -translate-y-1/2
+        text-6xl
+        font-black
+        opacity-30
+        ${challenge.colorClass}
+      `}
+      >
+        {challenge.id}
+      </span>
+
+      <div className="mt-auto flex items-end justify-center pt-8">
+        <span className="text-[15px] font-bold uppercase tracking-wider text-white">
+          {challenge.unlocked
+            ? "Ready to start!"
+            : "Complete previous challenge"}
+        </span>
+      </div>
+    </>
+  );
+
+  const openVisibleChallenge = () => {
+    if (!currentChallenge.unlocked) return;
+
+    setSelectedChallenge(currentChallenge.id);
+    resetChallenge();
+  };
+
   const renderChallengeResult = (nextChallenge: number | null) => {
     if (challengeStatus === "success") {
       return (
@@ -184,11 +344,15 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
             <div className="text-4xl text-green-400">✓</div>
 
             <h2 className="mt-4 text-2xl font-semibold text-white">
-              Great job!
+              {nextChallenge !== null
+                ? "Great job!"
+                : "All challenges completed!"}
             </h2>
 
             <p className="mt-2 text-sm text-gray-200">
-              You've completed this challenge and unlocked the next one.
+              {nextChallenge !== null
+                ? "You've completed this challenge and unlocked the next one."
+                : "Congratulations! You've completed every Coding Training challenge."}
             </p>
 
             {nextChallenge !== null ? (
@@ -200,20 +364,10 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
                   setChallengeStatus("idle");
                 }}
                 className="
-                  mt-6
-                  rounded-lg
-                  border
-                  border-green-400/20
-                  bg-green-400/10
-                  px-5
-                  py-2
-                  text-xs
-                  font-medium
-                  text-green-300
-                  transition-all
-                  duration-300
-                  hover:border-green-400/50
-                  hover:bg-green-400/15
+                  mt-6 rounded-lg border border-green-400/20
+                  bg-green-400/10 px-5 py-2 text-xs font-medium
+                  text-green-300 transition-all duration-300
+                  hover:border-green-400/50 hover:bg-green-400/15
                   hover:shadow-[0_0_20px_rgba(74,222,128,0.12)]
                   cursor-pointer
                 "
@@ -221,30 +375,37 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
                 Next Challenge →
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={goBackToChallenges}
-                className="
-                  mt-6
-                  rounded-lg
-                  border
-                  border-green-400/20
-                  bg-green-400/10
-                  px-5
-                  py-2
-                  text-xs
-                  font-medium
-                  text-green-300
-                  transition-all
-                  duration-300
-                  hover:border-green-400/50
-                  hover:bg-green-400/15
-                  hover:shadow-[0_0_20px_rgba(74,222,128,0.12)]
-                  cursor-pointer
-                "
-              >
-                Back to Challenges
-              </button>
+              <div className="mt-6 flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={goBackToChallenges}
+                  className="
+                    rounded-lg border border-green-400/20
+                    bg-green-400/10 px-5 py-2 text-xs font-medium
+                    text-green-300 transition-all duration-300
+                    hover:border-green-400/50 hover:bg-green-400/15
+                    hover:shadow-[0_0_20px_rgba(74,222,128,0.12)]
+                    cursor-pointer
+                  "
+                >
+                  Back to Challenges
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="
+                    rounded-lg border border-cyan-400/20
+                    bg-cyan-400/10 px-5 py-2 text-xs font-medium
+                    text-cyan-300 transition-all duration-300
+                    hover:border-cyan-400/50 hover:bg-cyan-400/15
+                    hover:shadow-[0_0_20px_rgba(34,211,238,0.12)]
+                    cursor-pointer
+                  "
+                >
+                  Back to PC Home
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -267,19 +428,9 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
             type="button"
             onClick={resetChallenge}
             className="
-              mt-6
-              rounded-lg
-              border
-              border-red-400/20
-              bg-red-400/10
-              px-5
-              py-2
-              text-xs
-              font-medium
-              text-red-300
-              transition-all
-              duration-300
-              hover:border-red-400/50
+              mt-6 rounded-lg border border-red-400/20 bg-red-400/10
+              px-5 py-2 text-xs font-medium text-red-300
+              transition-all duration-300 hover:border-red-400/50
               hover:bg-red-400/15
               hover:shadow-[0_0_20px_rgba(248,113,113,0.12)]
               cursor-pointer
@@ -315,7 +466,6 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
         hoverBg: "hover:bg-green-400/15",
         hoverShadow: "hover:shadow-[0_0_20px_rgba(74,222,128,0.12)]",
       },
-
       yellow: {
         text: "text-yellow-400",
         border: "border-yellow-400/10",
@@ -329,7 +479,6 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
         hoverBg: "hover:bg-yellow-400/15",
         hoverShadow: "hover:shadow-[0_0_20px_rgba(250,204,21,0.12)]",
       },
-
       red: {
         text: "text-red-400",
         border: "border-red-400/10",
@@ -353,23 +502,16 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
           type="button"
           onClick={goBackToChallenges}
           className="
-            absolute
-            right-6
-            top-9
-            text-[12.5px]
-            text-cyan-500
-            transition-colors
-            hover:text-cyan-300
-            cursor-pointer
+            absolute right-6 top-9 text-[12.5px] text-cyan-500
+            transition-colors hover:text-cyan-300 cursor-pointer
           "
         >
           ← Back to challenges
         </button>
 
         <div className="w-full max-w-3xl">
-          {/* Challenge header */}
           <div className="mb-6">
-            <div className="flex items-center gap-3 mb-10">
+            <div className="mb-10 flex items-center gap-3">
               <span className="text-sm text-gray-100">
                 Challenge {challengeNumber}
               </span>
@@ -387,43 +529,24 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
               {title}
             </h2>
 
-            <p className="mt-2 text-sm text-center text-gray-400">
+            <p className="mt-2 text-center text-sm text-gray-400">
               {description}
             </p>
           </div>
 
-          {/* Task */}
-          <div
-            className="
-              rounded-xl
-              border
-              border-white/10
-              bg-white/2
-              p-5
-            "
-          >
-            {/* <p className="text-sm font-medium text-gray-200">Task</p> */}
-
+          <div className="rounded-xl border border-white/10 bg-white/2 p-5">
             <p className="mt-2 text-sm leading-relaxed text-gray-200">{task}</p>
 
             <div
               className={`
-                mt-4
-                rounded-lg
-                border
-                ${theme.border}
-                ${theme.bg}
-                p-3
-                font-mono
-                text-xs
-                text-gray-400
+                mt-4 rounded-lg border ${theme.border} ${theme.bg}
+                p-3 font-mono text-xs text-gray-400
               `}
             >
               {example}
             </div>
           </div>
 
-          {/* Code */}
           <div className="mt-5">
             <p className="mb-2 text-center text-sm font-medium text-gray-200">
               Your solution
@@ -435,47 +558,23 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
               spellCheck={false}
               placeholder="Write your code here..."
               className={`
-                h-32
-                w-full
-                resize-none
-                rounded-xl
-                border
-                border-white/10
-                bg-[#050816]
-                p-4
-                font-mono
-                text-sm
-                text-gray-200
-                outline-none
-                transition
-                placeholder:text-gray-600
-                ${theme.focus}
-                ${theme.shadow}
+                h-32 w-full resize-none rounded-xl border border-white/10
+                bg-[#050816] p-4 font-mono text-sm text-gray-200 outline-none
+                transition placeholder:text-gray-600
+                ${theme.focus} ${theme.shadow}
               `}
             />
           </div>
 
-          {/* Run */}
           <div className="mt-4 flex justify-center">
             <button
               type="button"
               onClick={handleRunChallenge}
               className={`
-                rounded-lg
-                border
-                ${theme.buttonBorder}
-                ${theme.buttonBg}
-                px-5
-                py-2
-                text-xs
-                font-medium
-                ${theme.buttonText}
-                transition-all
-                duration-300
-                ${theme.hoverBorder}
-                ${theme.hoverBg}
-                ${theme.hoverShadow}
-                cursor-pointer
+                rounded-lg border ${theme.buttonBorder} ${theme.buttonBg}
+                px-5 py-2 text-xs font-medium ${theme.buttonText}
+                transition-all duration-300 ${theme.hoverBorder}
+                ${theme.hoverBg} ${theme.hoverShadow} cursor-pointer
               `}
             >
               Run Challenge →
@@ -489,68 +588,38 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
   return (
     <div
       className="
-        absolute
-        inset-0
-        z-40
-        flex
-        items-center
-        justify-center
-        bg-[#050816]/45
-        backdrop-blur-sm
+        absolute inset-0 z-40 flex items-center justify-center
+        bg-[#050816]/45 backdrop-blur-sm
       "
     >
       <div
         className="
-          relative
-          flex
-          flex-col
-          w-180
-          h-150
-          max-w-[90%]
-          rounded-2xl
-          border
-          border-cyan-400/20
-          bg-[#07111d]/95
-          p-6
-          text-white
+          relative flex h-150 w-180 max-w-[90%] flex-col rounded-2xl
+          border border-cyan-400/20 bg-[#07111d]/95 p-6 text-white
           shadow-[0_0_50px_rgba(34,211,238,0.12)]
         "
       >
-        {/* Header */}
         {selectedChallenge === null && (
-          <div className="flex items-center mt-1 justify-between">
+          <div className="mt-1 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-cyan-300">
                 Coding Training
               </h2>
 
-              <p className="text-[12.5px] mt-0.5 text-gray-300">
+              <p className="mt-0.5 text-[12.5px] text-gray-300">
                 Complete the challenges in order
               </p>
             </div>
 
-            {/* Close */}
             <button
               type="button"
               onClick={onClose}
               aria-label="Close Coding Training"
               className="
-                flex
-                h-8
-                w-8
-                items-center
-                justify-center
-                rounded-lg
-                border
-                border-red-500/20
-                bg-red-500/5
-                text-sm
-                text-red-400
-                transition-colors
-                duration-300
-                hover:border-red-400/50
-                hover:bg-red-500/10
-                hover:text-red-300
+                flex h-8 w-8 items-center justify-center rounded-lg
+                border border-red-500/20 bg-red-500/5 text-sm text-red-400
+                transition-colors duration-300 hover:border-red-400/50
+                hover:bg-red-500/10 hover:text-red-300
                 hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]
                 cursor-pointer
               "
@@ -560,131 +629,186 @@ function CodingTraining({ onClose }: CodingTrainingProps) {
           </div>
         )}
 
-        {/* Challenges */}
         {selectedChallenge === null ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="grid grid-cols-3 gap-5">
-              {/* Beginner */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedChallenge(1);
-                  resetChallenge();
-                }}
-                className="
-                  group
-                  rounded-xl
-                  border
-                  border-green-400/20
-                  bg-green-400/5
-                  p-5
-                  text-left
-                  transition-all
-                  duration-300
-                  hover:border-green-400/50
-                  hover:bg-green-400/10
-                  hover:shadow-[0_0_25px_rgba(74,222,128,0.12)]
-                  cursor-pointer
-                "
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-green-400">
-                    Beginner
-                  </span>
-
-                  <span className="text-lg">🔓</span>
+          <div className="flex flex-1 flex-col items-center justify-center gap-5">
+            <div className="relative h-90 w-90">
+              {leavingChallengeData && (
+                <div
+                  className={`
+          pointer-events-none
+          absolute
+          inset-0
+          transition-all
+          duration-380
+          ease-out
+          will-change-transform
+          ${
+            carouselPhase === "animate"
+              ? animationDirection === "next"
+                ? "translate-x-[125%] scale-95 opacity-0"
+                : "translate-x-[125%] scale-95 opacity-0"
+              : "translate-x-0 scale-100 opacity-100"
+          }
+        `}
+                >
+                  <div
+                    className={`
+            relative
+            flex
+            h-full
+            w-full
+            flex-col
+            rounded-xl
+            border
+            p-6
+            text-left
+            ${leavingChallengeData.cardClass}
+            ${
+              leavingChallengeData.unlocked
+                ? ""
+                : "cursor-not-allowed opacity-50"
+            }
+          `}
+                  >
+                    {renderChallengeCardContent(leavingChallengeData)}
+                  </div>
                 </div>
+              )}
 
-                <h3 className="text-base font-semibold text-white">
-                  Find the Maximum
-                </h3>
-
-                <p className="mt-2 text-xs leading-relaxed text-gray-400">
-                  Find the largest number inside an array.
-                </p>
-              </button>
-
-              {/* Intermediate */}
-              <button
-                type="button"
-                disabled={!challenge1Completed}
-                onClick={() => {
-                  setSelectedChallenge(2);
-                  resetChallenge();
-                }}
+              <div
+                key={visibleChallenge}
                 className={`
-                  rounded-xl
-                  border
-                  p-5
-                  text-left
-                  transition-all
-                  duration-300
-                  ${
-                    challenge1Completed
-                      ? "border-yellow-400/20 bg-yellow-400/5 hover:border-yellow-400/50 hover:bg-yellow-400/10 hover:shadow-[0_0_25px_rgba(250,204,21,0.12)] cursor-pointer"
-                      : "border-yellow-400/10 bg-yellow-400/5 opacity-50 cursor-not-allowed"
-                  }
-                `}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-yellow-400">
-                    Intermediate
-                  </span>
-
-                  <span className="text-lg">
-                    {challenge1Completed ? "🔓" : "🔒"}
-                  </span>
-                </div>
-
-                <h3 className="text-base font-semibold text-white">
-                  Filter and Sort
-                </h3>
-
-                <p className="mt-2 text-xs leading-relaxed text-gray-400">
-                  Filter and sort values from an array.
-                </p>
-              </button>
-
-              {/* Hard */}
-              <button
-                type="button"
-                disabled={!challenge2Completed}
-                onClick={() => {
-                  setSelectedChallenge(3);
-                  resetChallenge();
+        absolute
+        inset-0
+        z-10
+        transition-opacity
+        duration-380
+        will-change-transform
+        ${
+          carouselPhase === "prepare"
+            ? "pointer-events-none opacity-0"
+            : isCarouselAnimating
+              ? "pointer-events-none opacity-100"
+              : "opacity-100"
+        }
+      `}
+                onMouseEnter={() => setIsCardHovered(true)}
+                onMouseMove={handleCardMouseMove}
+                onMouseLeave={resetCardTilt}
+                onMouseDown={() => setIsCardPressed(true)}
+                onMouseUp={() => setIsCardPressed(false)}
+                style={{
+                  transform: `
+          translateX(${
+            carouselPhase === "prepare"
+              ? animationDirection === "next"
+                ? 125
+                : -125
+              : 0
+          }%)
+          perspective(900px)
+          rotateX(${cardTilt.rotateX}deg)
+          rotateY(${cardTilt.rotateY}deg)
+          translateY(${isCardHovered ? (isCardPressed ? -2 : -8) : 0}px)
+          scale(${isCardHovered ? (isCardPressed ? 0.985 : 1.015) : 1})
+        `,
+                  transition: isCarouselAnimating
+                    ? "transform 380ms cubic-bezier(0.7, 0.8, 0.9, 1)"
+                    : "transform 200ms ease-out",
                 }}
-                className={`
-                  rounded-xl
-                  border
-                  p-5
-                  text-left
-                  transition-all
-                  duration-300
-                  ${
-                    challenge2Completed
-                      ? "border-red-400/20 bg-red-400/5 hover:border-red-400/50 hover:bg-red-400/10 hover:shadow-[0_0_25px_rgba(248,113,113,0.12)] cursor-pointer"
-                      : "border-red-400/10 bg-red-400/5 opacity-50 cursor-not-allowed"
-                  }
-                `}
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-red-400">
-                    Hard
-                  </span>
+                {visibleChallenge > 1 && (
+                  <button
+                    type="button"
+                    onClick={showPreviousChallenge}
+                    aria-label="Previous challenge"
+                    className="
+            absolute
+            left-3
+            top-1/2
+            z-10
+            -translate-y-1/2
+            text-4xl
+            text-cyan-300/70
+            transition-all
+            duration-300
+            hover:scale-130
+            hover:text-cyan-200
+            cursor-pointer
+          "
+                  >
+                    ‹
+                  </button>
+                )}
 
-                  <span className="text-lg">
-                    {challenge2Completed ? "🔓" : "🔒"}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  disabled={!currentChallenge.unlocked}
+                  onClick={openVisibleChallenge}
+                  className={`
+          relative
+          flex
+          h-full
+          w-full
+          flex-col
+          rounded-xl
+          border
+          p-6
+          text-left
+          ${currentChallenge.cardClass}
+          ${
+            currentChallenge.unlocked
+              ? "cursor-pointer"
+              : "cursor-not-allowed opacity-50"
+          }
+        `}
+                >
+                  {renderChallengeCardContent(currentChallenge)}
+                </button>
 
-                <h3 className="text-base font-semibold text-white">
-                  Find the Top Values
-                </h3>
+                {visibleChallenge < 3 && (
+                  <button
+                    type="button"
+                    onClick={showNextChallenge}
+                    aria-label="Next challenge"
+                    className="
+            absolute
+            right-3
+            top-1/2
+            z-10
+            -translate-y-1/2
+            text-4xl
+            text-cyan-300/70
+            transition-all
+            duration-300
+            hover:scale-130
+            hover:text-cyan-200
+            cursor-pointer
+          "
+                  >
+                    ›
+                  </button>
+                )}
+              </div>
+            </div>
 
-                <p className="mt-2 text-xs leading-relaxed text-gray-400">
-                  Combine filtering, sorting and selection.
-                </p>
-              </button>
+            <div className="flex gap-2">
+              {challenges.map((challenge) => (
+                <span
+                  key={challenge.id}
+                  className={`
+          h-1.5
+          rounded-full
+          transition-all
+          duration-300
+          ${
+            challenge.id === visibleChallenge
+              ? "w-6 bg-cyan-300"
+              : "w-1.5 bg-white/20"
+          }
+        `}
+                />
+              ))}
             </div>
           </div>
         ) : selectedChallenge === 1 ? (
