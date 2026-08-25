@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import TodoApp from "./TodoApp";
 import CodingTraining from "./CodingTraining";
+import ShopApp from "./ShopApp";
 
 type ComputerInterfaceProps = {
   username: string;
@@ -49,6 +50,7 @@ function ComputerInterface({
 
   const [todoOpen, setTodoOpen] = useState(false);
   const [codingOpen, setCodingOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-[#050816] text-white">
@@ -182,6 +184,7 @@ function ComputerInterface({
 
       {todoOpen && <TodoApp onClose={() => setTodoOpen(false)} />}
       {codingOpen && <CodingTraining onClose={() => setCodingOpen(false)} />}
+      {shopOpen && <ShopApp onClose={() => setShopOpen(false)} />}
 
       {/* Desktop applications */}
       <main
@@ -288,6 +291,54 @@ function ComputerInterface({
 
             <span className="text-xs text-gray-300 transition group-hover:text-cyan-200">
               Coding Training
+            </span>
+          </button>
+
+          {/* Shop */}
+          <button
+            type="button"
+            onClick={() => setShopOpen(true)}
+            className="
+    group
+    flex
+    w-28
+    flex-col
+    items-center
+    gap-3
+    rounded-xl
+    p-4
+    transition-all
+    duration-300
+    hover:bg-white/4
+    cursor-pointer
+  "
+          >
+            <div
+              className="
+      flex
+      h-16
+      w-16
+      items-center
+      justify-center
+      rounded-2xl
+      border
+      border-cyan-400/20
+      bg-cyan-400/10
+      text-3xl
+      shadow-[0_0_20px_rgba(34,211,238,0.05)]
+      transition-all
+      duration-300
+      group-hover:scale-105
+      group-hover:border-cyan-400/50
+      group-hover:bg-cyan-400/15
+      group-hover:shadow-[0_0_30px_rgba(34,211,238,0.15)]
+    "
+            >
+              🛒
+            </div>
+
+            <span className="text-xs text-gray-300 transition group-hover:text-cyan-200">
+              Shop
             </span>
           </button>
 
